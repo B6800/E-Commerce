@@ -1,14 +1,19 @@
 import { useState } from 'react';
 import Navigation from '@/components/Navigation';
 import ProductCard from '@/components/ProductCard';
-import { useProducts, useCategories } from '@/hooks/useProducts';
+import ProductFiltersComponent from '@/components/ProductFilters';
+import { useProducts, useCategories, type ProductFilters } from '@/hooks/useProducts';
 import { Button } from '@/components/ui/button';
 import { Skeleton } from '@/components/ui/skeleton';
 
 const Index = () => {
-  const [selectedCategory, setSelectedCategory] = useState<string | undefined>();
-  const { products, loading: productsLoading } = useProducts(selectedCategory);
+  const [filters, setFilters] = useState<ProductFilters>({});
+  const { products, loading: productsLoading } = useProducts(filters);
   const { categories, loading: categoriesLoading } = useCategories();
+
+  const handleFiltersChange = (newFilters: ProductFilters) => {
+    setFilters(newFilters);
+  };
 
   return (
     <div className="min-h-screen bg-background">
@@ -23,43 +28,30 @@ const Index = () => {
           </p>
         </section>
 
-        {/* Categories */}
+        {/* Search & Filters */}
         <section className="mb-8">
-          <h2 className="text-2xl font-bold mb-4">Shop by Category</h2>
-          <div className="flex gap-4 mb-6">
-            <Button
-              variant={selectedCategory === undefined ? "default" : "outline"}
-              onClick={() => setSelectedCategory(undefined)}
-            >
-              All Products
-            </Button>
-            {categoriesLoading ? (
-              <>
-                <Skeleton className="h-10 w-32" />
-                <Skeleton className="h-10 w-24" />
-              </>
-            ) : (
-              categories.map((category) => (
-                <Button
-                  key={category.id}
-                  variant={selectedCategory === category.id ? "default" : "outline"}
-                  onClick={() => setSelectedCategory(category.id)}
-                >
-                  {category.name}
-                </Button>
-              ))
-            )}
-          </div>
+          <ProductFiltersComponent
+            filters={filters}
+            onFiltersChange={handleFiltersChange}
+            categories={categories}
+          />
         </section>
 
         {/* Products Grid */}
         <section>
-          <h2 className="text-2xl font-bold mb-6">
-            {selectedCategory 
-              ? categories.find(c => c.id === selectedCategory)?.name || 'Products'
-              : 'All Products'
-            }
-          </h2>
+          <div className="flex items-center justify-between mb-6">
+            <h2 className="text-2xl font-bold">
+              {filters.categoryId 
+                ? categories.find(c => c.id === filters.categoryId)?.name || 'Products'
+                : filters.search
+                ? `Search results for "${filters.search}"`
+                : 'All Products'
+              }
+            </h2>
+            <div className="text-sm text-muted-foreground">
+              {productsLoading ? 'Loading...' : `${products.length} products found`}
+            </div>
+          </div>
           
           {productsLoading ? (
             <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">

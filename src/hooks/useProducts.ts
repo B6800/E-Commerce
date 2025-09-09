@@ -21,14 +21,22 @@ interface Category {
   slug: string;
 }
 
-export const useProducts = (categoryId?: string) => {
+export interface ProductFilters {
+  search?: string;
+  categoryId?: string;
+  minPrice?: number;
+  maxPrice?: number;
+  sortBy?: 'name' | 'price-low' | 'price-high' | 'newest';
+}
+
+export const useProducts = (filters: ProductFilters = {}) => {
   const [products, setProducts] = useState<Product[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
     fetchProducts();
-  }, [categoryId]);
+  }, [filters.search, filters.categoryId, filters.minPrice, filters.maxPrice, filters.sortBy]);
 
   const fetchProducts = async () => {
     try {
@@ -49,11 +57,41 @@ export const useProducts = (categoryId?: string) => {
         `)
         .eq('is_active', true);
 
-      if (categoryId) {
-        query = query.eq('category_id', categoryId);
+      // Apply filters
+      if (filters.categoryId) {
+        query = query.eq('category_id', filters.categoryId);
       }
 
-      const { data, error } = await query.order('created_at', { ascending: false });
+      if (filters.minPrice !== undefined) {
+        query = query.gte('price', filters.minPrice);
+      }
+
+      if (filters.maxPrice !== undefined) {
+        query = query.lte('price', filters.maxPrice);
+      }
+
+      if (filters.search) {
+        query = query.or(`name.ilike.%${filters.search}%,description.ilike.%${filters.search}%`);
+      }
+
+      // Apply sorting
+      switch (filters.sortBy) {
+        case 'name':
+          query = query.order('name', { ascending: true });
+          break;
+        case 'price-low':
+          query = query.order('price', { ascending: true });
+          break;
+        case 'price-high':
+          query = query.order('price', { ascending: false });
+          break;
+        case 'newest':
+        default:
+          query = query.order('created_at', { ascending: false });
+          break;
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
       setProducts(data || []);
