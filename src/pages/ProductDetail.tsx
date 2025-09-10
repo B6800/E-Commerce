@@ -4,15 +4,24 @@ import { useProduct } from '@/hooks/useProducts';
 import { useCart } from '@/contexts/CartContext';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
 import { ArrowLeft, Minus, Plus } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useState } from 'react';
+import ReviewSummary from '@/components/ReviewSummary';
+import ReviewsList from '@/components/ReviewsList';
+import ReviewForm from '@/components/ReviewForm';
+import { useAuth } from '@/contexts/AuthContext';
+import { useUserReview } from '@/hooks/useReviews';
 
 const ProductDetail = () => {
   const { id } = useParams<{ id: string }>();
   const { product, loading, error } = useProduct(id!);
   const { addToCart } = useCart();
   const [quantity, setQuantity] = useState(1);
+  const { user } = useAuth();
+  const { userReview, refetch: refetchUserReview } = useUserReview(id!);
+  const [showReviewForm, setShowReviewForm] = useState(false);
 
   const handleAddToCart = async () => {
     if (!product) return;
@@ -20,6 +29,11 @@ const ProductDetail = () => {
     for (let i = 0; i < quantity; i++) {
       await addToCart(product.id);
     }
+  };
+
+  const handleReviewSuccess = () => {
+    setShowReviewForm(false);
+    refetchUserReview();
   };
 
   if (loading) {
@@ -168,6 +182,37 @@ const ProductDetail = () => {
                   </Button>
                 </div>
               )}
+            </div>
+          </div>
+
+          {/* Reviews Section */}
+          <div className="mt-16">
+            <Separator className="mb-8" />
+            
+            <div className="space-y-8">
+              <div className="flex items-center justify-between">
+                <h2 className="text-2xl font-bold">Reviews & Ratings</h2>
+                {user && !userReview && !showReviewForm && (
+                  <Button onClick={() => setShowReviewForm(true)}>
+                    Write a Review
+                  </Button>
+                )}
+              </div>
+
+              <ReviewSummary productId={id!} />
+
+              {showReviewForm && (
+                <div className="mb-8">
+                  <h3 className="text-lg font-semibold mb-4">Write Your Review</h3>
+                  <ReviewForm
+                    productId={id!}
+                    onSuccess={handleReviewSuccess}
+                    onCancel={() => setShowReviewForm(false)}
+                  />
+                </div>
+              )}
+
+              <ReviewsList productId={id!} />
             </div>
           </div>
         </div>

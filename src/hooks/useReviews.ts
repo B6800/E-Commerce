@@ -44,7 +44,7 @@ export const useReviews = (productId: string) => {
         .from('reviews')
         .select(`
           *,
-          profiles (
+          profiles!fk_reviews_profiles (
             first_name,
             last_name
           )
