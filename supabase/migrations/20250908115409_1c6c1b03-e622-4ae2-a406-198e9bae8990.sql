@@ -31,3 +31,4 @@ BEGIN
   RETURN new;
 END;
 $$;
+-- Insert sample products

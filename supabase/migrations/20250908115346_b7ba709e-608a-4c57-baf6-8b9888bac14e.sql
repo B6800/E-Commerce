@@ -210,3 +210,4 @@ INSERT INTO public.products (name, description, price, category_id, sku, stock_q
 ('Smartphone Case', 'Protective case for smartphones', 24.99, (SELECT id FROM categories WHERE slug = 'tech-gadgets'), 'SC-001', 100, 'smartphone-case'),
 ('Cotton T-Shirt', 'Comfortable cotton t-shirt', 29.99, (SELECT id FROM categories WHERE slug = 'clothing'), 'CT-001', 75, 'cotton-t-shirt'),
 ('Denim Jeans', 'Classic blue denim jeans', 79.99, (SELECT id FROM categories WHERE slug = 'clothing'), 'DJ-001', 30, 'denim-jeans');
+-- Insert sample products

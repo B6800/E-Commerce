@@ -17,3 +17,4 @@ END $$;
 ALTER TABLE public.reviews 
 ADD CONSTRAINT fk_reviews_profiles 
 FOREIGN KEY (user_id) REFERENCES public.profiles(id) ON DELETE CASCADE;
+-- Insert sample products
