@@ -160,3 +160,4 @@ const ProductFiltersComponent = ({ filters, onFiltersChange, categories }: Produ
 };
 
 export default ProductFiltersComponent;
+//Comment
