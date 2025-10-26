@@ -17,7 +17,7 @@ npm run dev
 - Navigate to the desired file(s).
 - Click the "Edit" button (pencil icon) at the top right of the file view.
 - Make your changes and commit the changes.
-
+-Backend intergration later with Springboot as for now Superbase is used
 **Use GitHub Codespaces**
 
 - Navigate to the main page of your repository.
