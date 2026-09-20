@@ -2,6 +2,7 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from './AuthContext';
 import { toast } from '@/hooks/use-toast';
+import { MOCK_PRODUCTS, getCatalogProductImage } from '@/data/mockCatalog';
 
 interface CartItem {
   id: string;
@@ -41,6 +42,27 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(false);
   const { user } = useAuth();
 
+  const localCartKey = user ? `techstore-local-cart:${user.id}` : null;
+  const isLocalProduct = (productId: string) =>
+    MOCK_PRODUCTS.some((product) => product.id === productId);
+
+  const readLocalCart = (): CartItem[] => {
+    if (!localCartKey) return [];
+
+    try {
+      return JSON.parse(localStorage.getItem(localCartKey) ?? '[]') as CartItem[];
+    } catch {
+      localStorage.removeItem(localCartKey);
+      return [];
+    }
+  };
+
+  const saveLocalCart = (cartItems: CartItem[]) => {
+    if (!localCartKey) return;
+    const localItems = cartItems.filter((item) => isLocalProduct(item.product_id));
+    localStorage.setItem(localCartKey, JSON.stringify(localItems));
+  };
+
   useEffect(() => {
     if (user) {
       fetchCartItems();
@@ -70,7 +92,14 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .eq('user_id', user.id);
 
       if (error) throw error;
-      setItems(data || []);
+      const remoteItems: CartItem[] = (data ?? []).map((item) => ({
+        ...item,
+        product: {
+          ...item.product,
+          image_url: getCatalogProductImage(item.product.name, item.product.image_url),
+        },
+      }));
+      setItems([...remoteItems, ...readLocalCart()]);
     } catch (error) {
       console.error('Error fetching cart items:', error);
     } finally {
@@ -90,6 +119,33 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     try {
       const existingItem = items.find(item => item.product_id === productId);
+
+      if (isLocalProduct(productId)) {
+        const product = MOCK_PRODUCTS.find((item) => item.id === productId)!;
+        const nextItems = existingItem
+          ? items.map((item) => item.product_id === productId
+              ? { ...item, quantity: item.quantity + 1 }
+              : item)
+          : [...items, {
+              id: `local-${product.id}`,
+              product_id: product.id,
+              quantity: 1,
+              product: {
+                id: product.id,
+                name: product.name,
+                price: product.price,
+                image_url: product.image_url,
+              },
+            }];
+
+        setItems(nextItems);
+        saveLocalCart(nextItems);
+        toast({
+          title: "Added to cart",
+          description: "Item added to your cart successfully"
+        });
+        return;
+      }
       
       if (existingItem) {
         await updateQuantity(productId, existingItem.quantity + 1);
@@ -123,6 +179,17 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const removeFromCart = async (productId: string) => {
     if (!user) return;
 
+    if (isLocalProduct(productId)) {
+      const nextItems = items.filter((item) => item.product_id !== productId);
+      setItems(nextItems);
+      saveLocalCart(nextItems);
+      toast({
+        title: "Removed from cart",
+        description: "Item removed from your cart"
+      });
+      return;
+    }
+
     try {
       const { error } = await supabase
         .from('cart_items')
@@ -150,6 +217,15 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
       return;
     }
 
+    if (isLocalProduct(productId)) {
+      const nextItems = items.map((item) => item.product_id === productId
+        ? { ...item, quantity }
+        : item);
+      setItems(nextItems);
+      saveLocalCart(nextItems);
+      return;
+    }
+
     try {
       const { error } = await supabase
         .from('cart_items')
@@ -174,6 +250,7 @@ export const CartProvider: React.FC<{ children: React.ReactNode }> = ({ children
         .eq('user_id', user.id);
 
       if (error) throw error;
+      if (localCartKey) localStorage.removeItem(localCartKey);
       setItems([]);
     } catch (error) {
       console.error('Error clearing cart:', error);
