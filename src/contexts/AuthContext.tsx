@@ -1,5 +1,5 @@
 import React, { createContext, useContext, useState, useEffect } from 'react';
-import { User, Session } from '@supabase/supabase-js';
+import { AuthError, User, Session } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 
@@ -7,8 +7,9 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
-  signUp: (email: string, password: string, firstName?: string, lastName?: string) => Promise<{ error: any }>;
-  signIn: (email: string, password: string) => Promise<{ error: any }>;
+  signUp: (email: string, password: string, firstName?: string, lastName?: string) => Promise<{ error: AuthError | null }>;
+  signIn: (email: string, password: string) => Promise<{ error: AuthError | null }>;
+  resendConfirmation: (email: string) => Promise<{ error: AuthError | null }>;
   signOut: () => Promise<void>;
 }
 
@@ -50,7 +51,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const signUp = async (email: string, password: string, firstName?: string, lastName?: string) => {
     const redirectUrl = `${window.location.origin}/`;
     
-    const { error } = await supabase.auth.signUp({
+    const { data, error } = await supabase.auth.signUp({
       email,
       password,
       options: {
@@ -62,18 +63,57 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       }
     });
 
+    const isObfuscatedExistingUser = !error
+      && data.user
+      && Array.isArray(data.user.identities)
+      && data.user.identities.length === 0;
+
     if (error) {
       toast({
-        title: "Error",
+        title: "Account could not be created",
         description: error.message,
         variant: "destructive"
       });
+    } else if (isObfuscatedExistingUser) {
+      toast({
+        title: "Account may already exist",
+        description: "Try signing in, or use Resend confirmation if the account is still unconfirmed.",
+        variant: "destructive"
+      });
+    } else if (data.session) {
+      toast({
+        title: "Account created",
+        description: "Your account is ready and you are now signed in."
+      });
     } else {
       toast({
-        title: "Success",
-        description: "Please check your email to confirm your account"
+        title: "Confirmation requested",
+        description: "Check your inbox and spam folder. You can resend the email after 60 seconds."
       });
     }
+
+    return { error };
+  };
+
+  const resendConfirmation = async (email: string) => {
+    const redirectUrl = `${window.location.origin}/`;
+    const { error } = await supabase.auth.resend({
+      type: 'signup',
+      email,
+      options: { emailRedirectTo: redirectUrl }
+    });
+
+    toast(error
+      ? {
+          title: "Email could not be resent",
+          description: error.message,
+          variant: "destructive"
+        }
+      : {
+          title: "Confirmation requested",
+          description: "Check your inbox and spam folder."
+        }
+    );
 
     return { error };
   };
@@ -109,6 +149,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     loading,
     signUp,
     signIn,
+    resendConfirmation,
     signOut
   };
 

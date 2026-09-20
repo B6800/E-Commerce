@@ -8,8 +8,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Navigate } from 'react-router-dom';
 
 const Auth = () => {
-  const { user, signIn, signUp } = useAuth();
+  const { user, signIn, signUp, resendConfirmation } = useAuth();
   const [loading, setLoading] = useState(false);
+  const [resending, setResending] = useState(false);
 
   // Redirect if already authenticated
   if (user) {
@@ -40,6 +41,20 @@ const Auth = () => {
     
     await signUp(email, password, firstName, lastName);
     setLoading(false);
+  };
+
+  const handleResend = async () => {
+    const emailInput = document.getElementById('signup-email') as HTMLInputElement | null;
+    const email = emailInput?.value.trim();
+
+    if (!email) {
+      emailInput?.focus();
+      return;
+    }
+
+    setResending(true);
+    await resendConfirmation(email);
+    setResending(false);
   };
 
   return (
@@ -130,6 +145,15 @@ const Auth = () => {
                 </div>
                 <Button type="submit" className="w-full" disabled={loading}>
                   {loading ? 'Creating Account...' : 'Sign Up'}
+                </Button>
+                <Button
+                  type="button"
+                  variant="ghost"
+                  className="w-full"
+                  disabled={loading || resending}
+                  onClick={handleResend}
+                >
+                  {resending ? 'Resending...' : 'Resend confirmation email'}
                 </Button>
               </form>
             </TabsContent>
