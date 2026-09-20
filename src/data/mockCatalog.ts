@@ -49,7 +49,7 @@ export const PRODUCT_IMAGE_BY_NAME: Record<string, string> = {
   'Classic Denim Jacket': '/products/denim-jacket.png',
   'Denim Jeans': '/products/denim-jacket.png',
   'Urban Daypack': '/products/urban-daypack.png',
-  'Smartphone Case': '/products/urban-daypack.png',
+  'Smartphone Case': '/products/smartphone-case.png',
   'Halo Desk Lamp': '/products/desk-lamp.png',
   'Ceramic Travel Mug': '/products/travel-mug.png',
   'Slate Mechanical Keyboard': '/products/mechanical-keyboard.png',
