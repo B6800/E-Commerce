@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import {
   MOCK_CATEGORIES,
   MOCK_PRODUCTS,
+  getCatalogProductImage,
   type CatalogProduct,
 } from '@/data/mockCatalog';
 
@@ -128,7 +129,12 @@ export const useProducts = (filters: ProductFilters = {}) => {
       const { data, error } = await query;
 
       if (error) throw error;
-      setProducts(data && data.length > 0 ? data : filterMockProducts(filters));
+      setProducts(data && data.length > 0
+        ? data.map((product) => ({
+            ...product,
+            image_url: getCatalogProductImage(product.name, product.image_url),
+          }))
+        : filterMockProducts(filters));
     } catch (err) {
       console.error('Error fetching products:', err);
       setProducts(filterMockProducts(filters));
@@ -213,7 +219,10 @@ export const useProduct = (productId: string) => {
         .single();
 
       if (error) throw error;
-      setProduct(data);
+      setProduct({
+        ...data,
+        image_url: getCatalogProductImage(data.name, data.image_url),
+      });
     } catch (err) {
       console.error('Error fetching product:', err);
       setError(err instanceof Error ? err.message : 'An error occurred');

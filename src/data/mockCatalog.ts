@@ -39,13 +39,31 @@ export const MOCK_CATEGORIES: CatalogCategory[] = [
 
 const [tech, clothing, home] = MOCK_CATEGORIES;
 
+export const PRODUCT_IMAGE_BY_NAME: Record<string, string> = {
+  'Pulse Wireless Headphones': '/products/wireless-headphones.png',
+  'Wireless Headphones': '/products/wireless-headphones.png',
+  'Orbit Smartwatch': '/products/smartwatch.png',
+  'Pocket Bluetooth Speaker': '/products/bluetooth-speaker.png',
+  'Everyday Cotton Tee': '/products/cotton-tee.png',
+  'Cotton T-Shirt': '/products/cotton-tee.png',
+  'Classic Denim Jacket': '/products/denim-jacket.png',
+  'Denim Jeans': '/products/denim-jacket.png',
+  'Urban Daypack': '/products/urban-daypack.png',
+  'Smartphone Case': '/products/urban-daypack.png',
+  'Halo Desk Lamp': '/products/desk-lamp.png',
+  'Ceramic Travel Mug': '/products/travel-mug.png',
+};
+
+export const getCatalogProductImage = (name: string, currentImage?: string | null) =>
+  PRODUCT_IMAGE_BY_NAME[name] ?? currentImage ?? undefined;
+
 export const MOCK_PRODUCTS: CatalogProduct[] = [
   {
     id: '20000000-0000-4000-8000-000000000001',
     name: 'Pulse Wireless Headphones',
     description: 'Over-ear headphones with active noise cancellation, rich sound and 32-hour battery life.',
     price: 129.99,
-    image_url: 'https://images.unsplash.com/photo-1505740420928-5e560c06d30e?auto=format&fit=crop&w=900&q=85',
+    image_url: '/products/wireless-headphones.png',
     stock_quantity: 42,
     category: tech,
     created_at: '2026-09-19T10:00:00.000Z',
@@ -55,7 +73,7 @@ export const MOCK_PRODUCTS: CatalogProduct[] = [
     name: 'Orbit Smartwatch',
     description: 'A lightweight fitness smartwatch with heart-rate tracking, GPS and a crisp AMOLED display.',
     price: 189.0,
-    image_url: 'https://images.unsplash.com/photo-1523275335684-37898b6baf30?auto=format&fit=crop&w=900&q=85',
+    image_url: '/products/smartwatch.png',
     stock_quantity: 28,
     category: tech,
     created_at: '2026-09-18T10:00:00.000Z',
@@ -65,7 +83,7 @@ export const MOCK_PRODUCTS: CatalogProduct[] = [
     name: 'Pocket Bluetooth Speaker',
     description: 'Compact water-resistant speaker with punchy sound and up to 14 hours of playback.',
     price: 59.95,
-    image_url: 'https://images.unsplash.com/photo-1608043152269-423dbba4e7e1?auto=format&fit=crop&w=900&q=85',
+    image_url: '/products/bluetooth-speaker.png',
     stock_quantity: 65,
     category: tech,
     created_at: '2026-09-17T10:00:00.000Z',
@@ -75,7 +93,7 @@ export const MOCK_PRODUCTS: CatalogProduct[] = [
     name: 'Everyday Cotton Tee',
     description: 'Soft heavyweight organic-cotton T-shirt with a relaxed unisex fit.',
     price: 29.9,
-    image_url: 'https://images.unsplash.com/photo-1521572163474-6864f9cf17ab?auto=format&fit=crop&w=900&q=85',
+    image_url: '/products/cotton-tee.png',
     stock_quantity: 90,
     category: clothing,
     created_at: '2026-09-16T10:00:00.000Z',
@@ -85,7 +103,7 @@ export const MOCK_PRODUCTS: CatalogProduct[] = [
     name: 'Classic Denim Jacket',
     description: 'A timeless mid-wash denim jacket designed for easy year-round layering.',
     price: 84.5,
-    image_url: 'https://images.unsplash.com/photo-1543076447-215ad9ba6923?auto=format&fit=crop&w=900&q=85',
+    image_url: '/products/denim-jacket.png',
     stock_quantity: 24,
     category: clothing,
     created_at: '2026-09-15T10:00:00.000Z',
@@ -95,7 +113,7 @@ export const MOCK_PRODUCTS: CatalogProduct[] = [
     name: 'Urban Daypack',
     description: 'Minimal 20-litre backpack with a padded laptop sleeve and weather-resistant shell.',
     price: 68.0,
-    image_url: 'https://images.unsplash.com/photo-1553062407-98eeb64c6a62?auto=format&fit=crop&w=900&q=85',
+    image_url: '/products/urban-daypack.png',
     stock_quantity: 37,
     category: clothing,
     created_at: '2026-09-14T10:00:00.000Z',
@@ -105,7 +123,7 @@ export const MOCK_PRODUCTS: CatalogProduct[] = [
     name: 'Halo Desk Lamp',
     description: 'Dimmable LED desk lamp with adjustable colour temperature and a USB-C charging port.',
     price: 49.99,
-    image_url: 'https://images.unsplash.com/photo-1507473885765-e6ed057f782c?auto=format&fit=crop&w=900&q=85',
+    image_url: '/products/desk-lamp.png',
     stock_quantity: 31,
     category: home,
     created_at: '2026-09-13T10:00:00.000Z',
@@ -115,10 +133,9 @@ export const MOCK_PRODUCTS: CatalogProduct[] = [
     name: 'Ceramic Travel Mug',
     description: 'Double-wall reusable mug with a splash-proof lid and a smooth ceramic interior.',
     price: 26.5,
-    image_url: 'https://images.unsplash.com/photo-1514228742587-6b1558fcca3d?auto=format&fit=crop&w=900&q=85',
+    image_url: '/products/travel-mug.png',
     stock_quantity: 54,
     category: home,
     created_at: '2026-09-12T10:00:00.000Z',
   },
 ];
-
