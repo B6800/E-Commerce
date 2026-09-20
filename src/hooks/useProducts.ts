@@ -14,6 +14,7 @@ interface Product {
   price: number;
   image_url?: string;
   stock_quantity: number;
+  created_at?: string;
   category?: {
     id: string;
     name: string;
@@ -27,22 +28,9 @@ interface Category {
   slug: string;
 }
 
-const filterMockProducts = (filters: ProductFilters): CatalogProduct[] => {
-  const search = filters.search?.trim().toLowerCase();
-
-  const products = MOCK_PRODUCTS.filter((product) => {
-    const matchesSearch = !search
-      || product.name.toLowerCase().includes(search)
-      || product.description?.toLowerCase().includes(search);
-    const matchesCategory = !filters.categoryId || product.category.id === filters.categoryId;
-    const matchesMin = filters.minPrice === undefined || product.price >= filters.minPrice;
-    const matchesMax = filters.maxPrice === undefined || product.price <= filters.maxPrice;
-
-    return matchesSearch && matchesCategory && matchesMin && matchesMax;
-  });
-
-  return [...products].sort((a, b) => {
-    switch (filters.sortBy) {
+const sortProducts = <T extends Product>(products: T[], sortBy: ProductFilters['sortBy']): T[] =>
+  [...products].sort((a, b) => {
+    switch (sortBy) {
       case 'name':
         return a.name.localeCompare(b.name);
       case 'price-low':
@@ -51,9 +39,30 @@ const filterMockProducts = (filters: ProductFilters): CatalogProduct[] => {
         return b.price - a.price;
       case 'newest':
       default:
-        return Date.parse(b.created_at) - Date.parse(a.created_at);
+        return Date.parse(b.created_at ?? '1970-01-01') - Date.parse(a.created_at ?? '1970-01-01');
     }
   });
+
+const filterMockProducts = (
+  filters: ProductFilters,
+  selectedCategoryName?: string,
+): CatalogProduct[] => {
+  const search = filters.search?.trim().toLowerCase();
+
+  const products = MOCK_PRODUCTS.filter((product) => {
+    const matchesSearch = !search
+      || product.name.toLowerCase().includes(search)
+      || product.description?.toLowerCase().includes(search);
+    const matchesCategory = !filters.categoryId
+      || product.category.id === filters.categoryId
+      || product.category.name === selectedCategoryName;
+    const matchesMin = filters.minPrice === undefined || product.price >= filters.minPrice;
+    const matchesMax = filters.maxPrice === undefined || product.price <= filters.maxPrice;
+
+    return matchesSearch && matchesCategory && matchesMin && matchesMax;
+  });
+
+  return sortProducts(products, filters.sortBy);
 };
 
 export interface ProductFilters {
@@ -85,6 +94,7 @@ export const useProducts = (filters: ProductFilters = {}) => {
           price,
           image_url,
           stock_quantity,
+          created_at,
           category:categories (
             id,
             name
@@ -129,12 +139,33 @@ export const useProducts = (filters: ProductFilters = {}) => {
       const { data, error } = await query;
 
       if (error) throw error;
-      setProducts(data && data.length > 0
-        ? data.map((product) => ({
-            ...product,
-            image_url: getCatalogProductImage(product.name, product.image_url),
-          }))
-        : filterMockProducts(filters));
+
+      let selectedCategoryName = MOCK_CATEGORIES.find(
+        (category) => category.id === filters.categoryId,
+      )?.name;
+
+      if (filters.categoryId && !selectedCategoryName) {
+        const { data: category } = await supabase
+          .from('categories')
+          .select('name')
+          .eq('id', filters.categoryId)
+          .maybeSingle();
+        selectedCategoryName = category?.name;
+      }
+
+      const remoteProducts: Product[] = (data ?? []).map((product) => ({
+        ...product,
+        image_url: getCatalogProductImage(product.name, product.image_url),
+      }));
+      const localProducts = filterMockProducts(filters, selectedCategoryName);
+
+      // Local products keep the storefront populated while database products
+      // take precedence when the same product has been seeded in Supabase.
+      const mergedProducts = new Map<string, Product>();
+      localProducts.forEach((product) => mergedProducts.set(product.name.toLowerCase(), product));
+      remoteProducts.forEach((product) => mergedProducts.set(product.name.toLowerCase(), product));
+
+      setProducts(sortProducts([...mergedProducts.values()], filters.sortBy));
     } catch (err) {
       console.error('Error fetching products:', err);
       setProducts(filterMockProducts(filters));
@@ -165,7 +196,10 @@ export const useCategories = () => {
         .order('name');
 
       if (error) throw error;
-      setCategories(data && data.length > 0 ? data : MOCK_CATEGORIES);
+      const mergedCategories = new Map<string, Category>();
+      MOCK_CATEGORIES.forEach((category) => mergedCategories.set(category.name.toLowerCase(), category));
+      (data ?? []).forEach((category) => mergedCategories.set(category.name.toLowerCase(), category));
+      setCategories([...mergedCategories.values()].sort((a, b) => a.name.localeCompare(b.name)));
     } catch (err) {
       console.error('Error fetching categories:', err);
       setCategories(MOCK_CATEGORIES);
